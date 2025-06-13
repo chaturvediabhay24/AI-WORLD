@@ -1,11 +1,15 @@
 from typing import Dict, Optional, Type
 from app.services.base import BaseModelService
 from app.services.openai_service import OpenAIService
+from app.services.perplexity_service import PerplexityService
+from app.services.anthropic_service import AnthropicService
 
 
 class ModelServiceFactory:
     _services: Dict[str, Type[BaseModelService]] = {
         "openai": OpenAIService,
+        "perplexity": PerplexityService,
+        "anthropic": AnthropicService,
     }
     
     _instances: Dict[int, BaseModelService] = {}

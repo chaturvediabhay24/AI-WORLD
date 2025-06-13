@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     # Model Providers
     OPENAI_API_KEY: Optional[str] = None
     ANTHROPIC_API_KEY: Optional[str] = None
+    PERPLEXITY_API_KEY: Optional[str] = None
 
     # Security Settings
     CORS_ORIGINS: list[str] = ["*"]

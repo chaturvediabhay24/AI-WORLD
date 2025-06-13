@@ -49,10 +49,10 @@ A flexible and extensible AI agents framework built with FastAPI and LangChain, 
 5. Create databases:
    ```bash
    # For development
-   createdb ai_world
+   createdb postgres
    
    # For testing
-   createdb ai_world_test
+   createdb postgres_test
    ```
 
 ### Running the Server
@@ -74,6 +74,8 @@ The API will be available at `http://localhost:8000`
 ### Model Providers API
 
 #### Register a Provider
+
+##### OpenAI Provider
 ```http
 POST /api/v1/providers/
 ```
@@ -87,6 +89,48 @@ POST /api/v1/providers/
   }
 }
 ```
+
+##### Perplexity Provider
+```http
+POST /api/v1/providers/
+```
+```json
+{
+  "name": "perplexity",
+  "api_key": "your-perplexity-api-key",
+  "config": {
+    "model_name": "pplx-7b-chat",
+    "temperature": 0.7,
+    "system_message": "You are a helpful AI assistant."
+  }
+}
+```
+
+##### Anthropic Provider
+```http
+POST /api/v1/providers/
+```
+```json
+{
+  "name": "anthropic",
+  "api_key": "your-anthropic-api-key",
+  "config": {
+    "model_name": "claude-3-opus",
+    "temperature": 0.7,
+    "system_message": "You are Claude, a helpful AI assistant.",
+    "max_tokens": 2048
+  }
+}
+```
+
+Available Perplexity Models:
+- pplx-7b-chat
+- pplx-70b-chat
+- pplx-7b-online
+- pplx-70b-online
+- mistral-7b-instruct
+- codellama-34b-instruct
+- llama-2-70b-chat
 
 #### List Providers
 ```http
@@ -251,6 +295,44 @@ app/
    ```python
    ModelServiceFactory.register_service("new_provider", NewProviderService)
    ```
+
+## Supported Model Providers
+
+### OpenAI
+- Default model: gpt-3.5-turbo
+- Supports streaming responses
+- Configuration options:
+  - model_name: The model to use (e.g., gpt-3.5-turbo, gpt-4)
+  - temperature: Controls randomness (0.0 to 1.0)
+  - system_message: Custom system prompt
+
+### Perplexity
+- Default model: pplx-7b-chat
+- Supports streaming responses
+- Configuration options:
+  - model_name: The model to use (see list above)
+  - temperature: Controls randomness (0.0 to 1.0)
+  - system_message: Custom system prompt
+- Special features:
+  - Online models (pplx-7b-online, pplx-70b-online) have internet access
+  - Specialized models for code (codellama-34b-instruct)
+
+### Anthropic (Claude)
+- Default model: claude-2.1
+- Supports streaming responses
+- Configuration options:
+  - model_name: The model to use (e.g., claude-2.1, claude-3-opus, claude-3-sonnet)
+  - temperature: Controls randomness (0.0 to 1.0)
+  - system_message: Custom system prompt
+  - max_tokens: Maximum tokens in response (default: 1024)
+- Available Models:
+  - claude-2.1: Balanced performance and cost
+  - claude-3-opus: Most capable model, best for complex tasks
+  - claude-3-sonnet: Fast and cost-effective for shorter tasks
+- Special features:
+  - Strong reasoning capabilities
+  - Code generation and analysis
+  - Long context windows
 
 ## Common Issues & Solutions
 
