@@ -47,6 +47,6 @@ class OpenAIService(BaseModelService):
             HumanMessage(content=message)
         ]
 
-        async for chunk in await self.model.astream([messages]):
+        async for chunk in self.model.astream(messages):
             if chunk.content:
                 yield chunk.content

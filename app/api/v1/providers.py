@@ -25,6 +25,14 @@ async def create_provider(
             config=provider.config
         )
         
+        # Check for existing provider with the same name
+        from sqlalchemy import select
+        stmt = select(ModelProvider).where(ModelProvider.name == provider.name)
+        result = await db.execute(stmt)
+        existing = result.scalar_one_or_none()
+        if existing:
+            raise HTTPException(status_code=400, detail=f"Provider with name '{provider.name}' already exists.")
+        
         # Create provider in database
         db_provider = ModelProvider(
             name=provider.name,
@@ -46,7 +54,9 @@ async def list_providers(
     db: AsyncSession = Depends(get_db)
 ):
     """List all model providers."""
-    result = await db.execute(ModelProvider.__table__.select())
+    from sqlalchemy import select
+    stmt = select(ModelProvider).order_by(ModelProvider.id)
+    result = await db.execute(stmt)
     return result.scalars().all()
 
 
@@ -56,9 +66,9 @@ async def get_provider(
     db: AsyncSession = Depends(get_db)
 ):
     """Get a specific model provider."""
-    result = await db.execute(
-        ModelProvider.__table__.select().where(ModelProvider.id == provider_id)
-    )
+    from sqlalchemy import select
+    stmt = select(ModelProvider).where(ModelProvider.id == provider_id)
+    result = await db.execute(stmt)
     provider = result.scalar_one_or_none()
     if not provider:
         raise HTTPException(status_code=404, detail="Provider not found")
@@ -72,9 +82,9 @@ async def update_provider(
     db: AsyncSession = Depends(get_db)
 ):
     """Update a model provider."""
-    result = await db.execute(
-        ModelProvider.__table__.select().where(ModelProvider.id == provider_id)
-    )
+    from sqlalchemy import select
+    stmt = select(ModelProvider).where(ModelProvider.id == provider_id)
+    result = await db.execute(stmt)
     db_provider = result.scalar_one_or_none()
     if not db_provider:
         raise HTTPException(status_code=404, detail="Provider not found")
@@ -107,9 +117,9 @@ async def delete_provider(
     db: AsyncSession = Depends(get_db)
 ):
     """Delete a model provider."""
-    result = await db.execute(
-        ModelProvider.__table__.select().where(ModelProvider.id == provider_id)
-    )
+    from sqlalchemy import select
+    stmt = select(ModelProvider).where(ModelProvider.id == provider_id)
+    result = await db.execute(stmt)
     provider = result.scalar_one_or_none()
     if not provider:
         raise HTTPException(status_code=404, detail="Provider not found")

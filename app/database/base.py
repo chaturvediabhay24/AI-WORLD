@@ -1,7 +1,6 @@
 from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.ext.declarative import as_declarative, declared_attr
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import DeclarativeBase, Mapped, declared_attr, sessionmaker
 
 from app.core.config import settings
 
@@ -9,13 +8,14 @@ engine = create_async_engine(settings.get_database_url, echo=True)
 AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
-@as_declarative()
-class Base:
-    id: Any
-    __name__: str
-
-    @declared_attr
+class Base(DeclarativeBase):
+    """Base class for all database models."""
+    
+    id: Mapped[int]
+    
+    @declared_attr.directive
     def __tablename__(cls) -> str:
+        """Generate tablename from class name."""
         return cls.__name__.lower()
 
 

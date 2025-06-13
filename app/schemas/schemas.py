@@ -8,6 +8,10 @@ class ModelProviderBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=50)
     config: Optional[Dict[str, Any]] = None
 
+    class Config:
+        from_attributes = True
+        populate_by_name = True
+
 
 class ModelProviderCreate(ModelProviderBase):
     api_key: str = Field(..., min_length=1, max_length=255)
@@ -25,12 +29,13 @@ class ModelProviderInDB(ModelProviderBase):
 
     class Config:
         from_attributes = True
+        populate_by_name = True
 
 
 # ChatHistory Schemas
 class ChatHistoryBase(BaseModel):
     user_message: str
-    metadata: Optional[Dict[str, Any]] = None
+    chat_metadata: Optional[Dict[str, Any]] = None
 
 
 class ChatHistoryCreate(ChatHistoryBase):
@@ -52,4 +57,4 @@ class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1)
     model_provider_id: int = Field(..., gt=0)
     stream: bool = Field(default=False)
-    metadata: Optional[Dict[str, Any]] = None
+    chat_metadata: Optional[Dict[str, Any]] = None

@@ -70,7 +70,7 @@ async def test_chat_history(db_session, test_provider):
         model_provider_id=test_provider.id,
         user_message="Hello",
         assistant_message="Hi there!",
-        metadata={"test": True}
+        chat_metadata={"test": True}
     )
     db_session.add(chat)
     await db_session.commit()

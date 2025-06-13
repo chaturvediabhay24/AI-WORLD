@@ -52,7 +52,11 @@ async def test_chat(test_provider, db_session):
             json={
                 "message": "Hello, how are you?",
                 "model_provider_id": test_provider.id,
-                "stream": False
+                "stream": False,
+                "chat_metadata": {
+                    "user_id": "123",
+                    "session_id": "abc"
+                }
             }
         )
     assert response.status_code == 200
@@ -60,6 +64,8 @@ async def test_chat(test_provider, db_session):
     assert data["user_message"] == "Hello, how are you?"
     assert "assistant_message" in data
     assert data["model_provider"]["name"] == "test_openai"
+    assert data["chat_metadata"]["user_id"] == "123"
+    assert data["chat_metadata"]["session_id"] == "abc"
 
 
 @pytest.mark.asyncio
@@ -71,6 +77,7 @@ async def test_chat_history(test_provider, test_chat_history, db_session):
     assert len(data) >= 1
     assert data[0]["user_message"] == "Hello"
     assert data[0]["assistant_message"] == "Hi there!"
+    assert data[0]["chat_metadata"]["test"] is True
 
 
 @pytest.mark.asyncio
@@ -83,3 +90,22 @@ async def test_delete_provider(test_provider, db_session):
     # Verify provider is deleted
     response = await ac.get(f"/api/v1/providers/{test_provider.id}")
     assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_chat_stream(test_provider, db_session):
+    async with AsyncClient(app=app, base_url="http://test") as ac:
+        response = await ac.post(
+            "/api/v1/chat/chat/stream",
+            json={
+                "message": "Tell me a story",
+                "model_provider_id": test_provider.id,
+                "stream": True,
+                "chat_metadata": {
+                    "user_id": "123",
+                    "session_id": "abc"
+                }
+            }
+        )
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "text/event-stream"
