@@ -160,10 +160,24 @@ async def get_chat_history(
     await get_provider_or_404(provider_id, db)
     
     from sqlalchemy import select
+    from sqlalchemy.orm import selectinload
     stmt = (
         select(ChatHistory)
+        .options(selectinload(ChatHistory.model_provider))
         .where(ChatHistory.model_provider_id == provider_id)
         .order_by(ChatHistory.created_at.desc())
     )
     result = await db.execute(stmt)
-    return result.scalars().all()
+    chat_histories = result.scalars().all()
+    # Manually construct the response list
+    return [
+        ChatHistoryResponse(
+            id=ch.id,
+            user_message=ch.user_message,
+            assistant_message=ch.assistant_message,
+            chat_metadata=ch.chat_metadata,
+            created_at=ch.created_at,
+            model_provider=ModelProviderBase.from_orm(ch.model_provider)
+        )
+        for ch in chat_histories
+    ]
