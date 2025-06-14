@@ -25,6 +25,7 @@ class ChatHistory(Base):
     __tablename__ = "chathistory"
 
     id: Mapped[int] = Column(Integer, primary_key=True, index=True)
+    conversation_id: Mapped[str] = Column(String(50), index=True, nullable=True)
     model_provider_id: Mapped[int] = Column(Integer, ForeignKey("modelprovider.id"))
     user_message: Mapped[str] = Column(Text, nullable=False)
     assistant_message: Mapped[str] = Column(Text, nullable=False)

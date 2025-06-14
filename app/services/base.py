@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import AsyncGenerator, Dict, Any, Optional
+from typing import AsyncGenerator, Dict, Any, Optional, List
 
-from langchain.schema import BaseMessage
+from langchain.schema import BaseMessage, HumanMessage, AIMessage
 from langchain.chat_models.base import BaseChatModel
 
 
@@ -17,14 +17,36 @@ class BaseModelService(ABC):
         pass
 
     @abstractmethod
-    async def generate_response(self, message: str) -> str:
-        """Generate a response for the given message."""
+    async def generate_response(self, message: str, messages: Optional[List[Dict[str, str]]] = None) -> str:
+        """
+        Generate a response for the given message.
+        
+        Args:
+            message: The current message to respond to
+            messages: Optional list of previous messages in the conversation, each with 'role' and 'content'
+        """
         pass
 
     @abstractmethod
-    async def generate_stream(self, message: str) -> AsyncGenerator[str, None]:
-        """Generate a streaming response for the given message."""
+    async def generate_stream(self, message: str, messages: Optional[List[Dict[str, str]]] = None) -> AsyncGenerator[str, None]:
+        """
+        Generate a streaming response for the given message.
+        
+        Args:
+            message: The current message to respond to
+            messages: Optional list of previous messages in the conversation, each with 'role' and 'content'
+        """
         pass
+
+    def _convert_messages_to_langchain_format(self, messages: List[Dict[str, str]]) -> List[BaseMessage]:
+        """Convert messages to LangChain format."""
+        langchain_messages = []
+        for msg in messages:
+            if msg["role"] == "user":
+                langchain_messages.append(HumanMessage(content=msg["content"]))
+            elif msg["role"] == "assistant":
+                langchain_messages.append(AIMessage(content=msg["content"]))
+        return langchain_messages
 
     @property
     def model(self) -> BaseChatModel:

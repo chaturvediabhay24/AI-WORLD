@@ -1,8 +1,9 @@
-from typing import Dict, Any
+from typing import Dict, Any, List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sse_starlette.sse import EventSourceResponse
+from uuid import uuid4
 
 from app.database.base import get_db
 from app.models.models import ModelProvider, ChatHistory
@@ -12,6 +13,17 @@ from app.core.config import settings
 
 router = APIRouter()
 
+
+async def get_conversation_history(conversation_id: str, db: AsyncSession) -> List[ChatHistory]:
+    """Get all messages from a conversation ordered by creation time."""
+    from sqlalchemy import select
+    stmt = (
+        select(ChatHistory)
+        .where(ChatHistory.conversation_id == conversation_id)
+        .order_by(ChatHistory.created_at.asc())
+    )
+    result = await db.execute(stmt)
+    return result.scalars().all()
 
 async def get_provider_or_404(provider_id: int, db: AsyncSession) -> ModelProvider:
     """Get provider or raise 404 error."""
@@ -54,12 +66,30 @@ async def chat(
             config=provider.config
         )
         
-        # Generate response
-        response = await service.generate_response(request.message)
+        # Get conversation history if conversation_id is provided
+        conversation_history = []
+        if request.conversation_id:
+            conversation_history = await get_conversation_history(request.conversation_id, db)
+
+        # Prepare conversation context
+        messages = []
+        for history in conversation_history:
+            messages.extend([
+                {"role": "user", "content": history.user_message},
+                {"role": "assistant", "content": history.assistant_message}
+            ])
+        messages.append({"role": "user", "content": request.message})
+
+        # Generate response with conversation context
+        response = await service.generate_response(request.message, messages=messages)
+        
+        # Generate conversation_id if not provided
+        conversation_id = request.conversation_id or str(uuid4())
         
         # Save chat history
         chat_history = ChatHistory(
             model_provider_id=provider.id,
+            conversation_id=conversation_id,
             user_message=request.message,
             assistant_message=response,
             chat_metadata=request.chat_metadata
@@ -83,6 +113,7 @@ async def chat(
             id=chat_history_with_provider.id,
             user_message=chat_history_with_provider.user_message,
             assistant_message=chat_history_with_provider.assistant_message,
+            conversation_id=chat_history_with_provider.conversation_id,
             chat_metadata=chat_history_with_provider.chat_metadata,
             created_at=chat_history_with_provider.created_at,
             model_provider=ModelProviderBase.from_orm(chat_history_with_provider.model_provider)
@@ -125,19 +156,37 @@ async def chat_stream(
             config=provider.config
         )
         
+        # Get conversation history if conversation_id is provided
+        conversation_history = []
+        if request.conversation_id:
+            conversation_history = await get_conversation_history(request.conversation_id, db)
+
+        # Prepare conversation context
+        messages = []
+        for history in conversation_history:
+            messages.extend([
+                {"role": "user", "content": history.user_message},
+                {"role": "assistant", "content": history.assistant_message}
+            ])
+        messages.append({"role": "user", "content": request.message})
+
         # Create generator function for streaming
         async def event_generator():
             full_response = []
-            async for chunk in service.generate_stream(request.message):
+            async for chunk in service.generate_stream(request.message, messages=messages):
                 full_response.append(chunk)
                 yield {
                     "event": "message",
                     "data": chunk
                 }
             
+            # Generate conversation_id if not provided
+            conversation_id = request.conversation_id or str(uuid4())
+            
             # Save chat history after completion
             chat_history = ChatHistory(
                 model_provider_id=provider.id,
+                conversation_id=conversation_id,
                 user_message=request.message,
                 assistant_message="".join(full_response),
                 chat_metadata=request.chat_metadata

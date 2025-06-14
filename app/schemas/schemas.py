@@ -44,6 +44,7 @@ class ChatHistoryCreate(ChatHistoryBase):
 
 class ChatHistoryResponse(ChatHistoryBase):
     id: int
+    conversation_id: Optional[str]
     assistant_message: str
     created_at: datetime
     model_provider: ModelProviderBase
@@ -57,4 +58,5 @@ class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1)
     model_provider_id: int = Field(..., gt=0)
     stream: bool = Field(default=False)
+    conversation_id: Optional[str] = Field(None, min_length=1, max_length=50)
     chat_metadata: Optional[Dict[str, Any]] = None

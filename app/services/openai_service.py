@@ -1,4 +1,4 @@
-from typing import AsyncGenerator, Dict, Any, Optional
+from typing import AsyncGenerator, Dict, Any, Optional, List
 import json
 
 from langchain.chat_models import ChatOpenAI
@@ -21,17 +21,23 @@ class OpenAIService(BaseModelService):
             streaming=streaming
         )
 
-    async def generate_response(self, message: str) -> str:
+    async def generate_response(self, message: str, messages: Optional[List[Dict[str, str]]] = None) -> str:
         """Generate a response using the OpenAI chat model."""
-        messages = [
-            SystemMessage(content=self.config.get("system_message", "You are a helpful AI assistant.")),
-            HumanMessage(content=message)
+        langchain_messages = [
+            SystemMessage(content=self.config.get("system_message", "You are a helpful AI assistant."))
         ]
         
-        response = await self.model.agenerate([messages])
+        # Add conversation history if provided
+        if messages:
+            langchain_messages.extend(self._convert_messages_to_langchain_format(messages))
+        
+        # Add current message
+        langchain_messages.append(HumanMessage(content=message))
+        
+        response = await self.model.agenerate([langchain_messages])
         return response.generations[0][0].text
 
-    async def generate_stream(self, message: str) -> AsyncGenerator[str, None]:
+    async def generate_stream(self, message: str, messages: Optional[List[Dict[str, str]]] = None) -> AsyncGenerator[str, None]:
         """Generate a streaming response using the OpenAI chat model."""
         # Ensure streaming is enabled
         if not self.model.streaming:
@@ -42,11 +48,17 @@ class OpenAIService(BaseModelService):
                 streaming=True
             )
 
-        messages = [
-            SystemMessage(content=self.config.get("system_message", "You are a helpful AI assistant.")),
-            HumanMessage(content=message)
+        langchain_messages = [
+            SystemMessage(content=self.config.get("system_message", "You are a helpful AI assistant."))
         ]
+        
+        # Add conversation history if provided
+        if messages:
+            langchain_messages.extend(self._convert_messages_to_langchain_format(messages))
+        
+        # Add current message
+        langchain_messages.append(HumanMessage(content=message))
 
-        async for chunk in self.model.astream(messages):
+        async for chunk in self.model.astream(langchain_messages):
             if chunk.content:
                 yield chunk.content

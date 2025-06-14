@@ -172,12 +172,25 @@ POST /api/v1/chat/chat
   "message": "Hello, how are you?",
   "model_provider_id": 1,
   "stream": false,
+  "conversation_id": "optional-uuid-for-conversation",
   "metadata": {
     "user_id": "123",
     "session_id": "abc"
   }
 }
 ```
+
+The chat endpoint supports conversational context through the optional `conversation_id` parameter:
+
+- If `conversation_id` is not provided, a new conversation ID will be generated and returned in the response
+- If `conversation_id` is provided, the message will be treated as a follow-up question in that conversation
+- The model will have access to the full conversation history when generating responses
+- All messages in a conversation share the same `conversation_id`
+
+Example conversation flow:
+1. First message (no conversation_id) -> Response includes a new conversation_id
+2. Follow-up question (include previous conversation_id) -> Model has context of previous messages
+3. Continue conversation by including the same conversation_id in subsequent requests
 
 #### Stream Chat Response
 ```http
@@ -187,7 +200,8 @@ POST /api/v1/chat/chat/stream
 {
   "message": "Tell me a story",
   "model_provider_id": 1,
-  "stream": true
+  "stream": true,
+  "conversation_id": "optional-uuid-for-conversation"
 }
 ```
 
