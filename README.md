@@ -10,6 +10,7 @@ A flexible and extensible AI agents framework built with FastAPI and LangChain, 
 - 🗄️ PostgreSQL database for persistence
 - 📝 Chat history tracking
 - 🔐 API key management
+- 🛠️ Extensible tools system
 - 📚 OpenAPI/Swagger documentation
 
 ## Setup Instructions
@@ -160,6 +161,103 @@ PUT /api/v1/providers/{provider_id}
 ```http
 DELETE /api/v1/providers/{provider_id}
 ```
+
+### Tools API
+
+#### List Available Tools
+```http
+GET /api/v1/tools
+```
+Returns a list of all available tools that can be enabled for providers.
+
+#### Get Provider Tools
+```http
+GET /api/v1/tools/{provider_id}
+```
+Returns all tools enabled for a specific provider.
+
+#### Execute Tool
+```http
+POST /api/v1/tools/{provider_id}/execute
+```
+```json
+{
+  "tool_id": "calculator",
+  "parameters": {
+    "operation": "add",
+    "x": 5,
+    "y": 3
+  }
+}
+```
+
+### Adding New Tools
+
+1. Create a new tool class in `app/tools/`:
+   ```python
+   from app.tools.base import BaseTool, ToolDefinition, ToolParameter
+
+   class MyNewTool(BaseTool):
+       def __init__(self, provider_id: int):
+           self.provider_id = provider_id
+
+       def get_definition(self) -> ToolDefinition:
+           return ToolDefinition(
+               id="my-tool",
+               name="My Tool",
+               description="Description of what the tool does",
+               provider_id=self.provider_id,
+               parameters=[
+                   ToolParameter(
+                       name="param1",
+                       type="string",
+                       description="Description of parameter 1",
+                       required=True
+                   )
+               ]
+           )
+
+       async def execute(self, parameters: Dict[str, Any]) -> Any:
+           # Implement tool logic here
+           pass
+   ```
+
+2. Register the tool in `app/tools/__init__.py`:
+   ```python
+   from app.tools.my_tool import MyNewTool
+   ToolRegistry.register_tool(MyNewTool)
+   ```
+
+3. Enable the tool for a provider by updating the provider's tool_ids:
+   ```http
+   PUT /api/v1/providers/{provider_id}
+   ```
+   ```json
+   {
+     "tool_ids": ["calculator", "my-tool"]
+   }
+   ```
+
+### Built-in Tools
+
+#### Calculator
+- Tool ID: `calculator`
+- Description: Perform basic arithmetic calculations
+- Parameters:
+  - operation: string (add, subtract, multiply, divide)
+  - x: number (first operand)
+  - y: number (second operand)
+- Example:
+  ```json
+  {
+    "tool_id": "calculator",
+    "parameters": {
+      "operation": "multiply",
+      "x": 4,
+      "y": 2
+    }
+  }
+  ```
 
 ### Chat API
 

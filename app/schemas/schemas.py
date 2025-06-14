@@ -1,12 +1,32 @@
 from datetime import datetime
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from pydantic import BaseModel, Field
+
+from app.tools.base import ToolParameter, ToolDefinition
+
+# Tool Schemas
+class ToolExecuteRequest(BaseModel):
+    """Schema for tool execution request."""
+    tool_id: str = Field(..., description="ID of the tool to execute")
+    parameters: Dict[str, Any] = Field(..., description="Parameters for the tool execution")
+
+
+class ToolExecuteResponse(BaseModel):
+    """Schema for tool execution response."""
+    result: Any = Field(..., description="Result of the tool execution")
+    tool_id: str = Field(..., description="ID of the executed tool")
+
+
+class ToolListResponse(BaseModel):
+    """Schema for listing available tools."""
+    tools: List[ToolDefinition] = Field(..., description="List of available tools")
 
 
 # ModelProvider Schemas
 class ModelProviderBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=50)
     config: Optional[Dict[str, Any]] = None
+    tool_ids: Optional[List[str]] = Field(default_factory=list, description="List of enabled tool IDs")
 
     class Config:
         from_attributes = True

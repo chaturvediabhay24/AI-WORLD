@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.v1 import providers, chat
+from app.api.v1 import providers, chat, tools
 from app.core.config import settings
 from app.database.base import Base, engine
 from dotenv import load_dotenv
@@ -33,6 +33,11 @@ app.include_router(
     chat.router,
     prefix=f"{settings.API_V1_STR}/chat",
     tags=["chat"]
+)
+app.include_router(
+    tools.router,
+    prefix=f"{settings.API_V1_STR}",
+    tags=["tools"]
 )
 
 

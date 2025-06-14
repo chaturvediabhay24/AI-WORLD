@@ -1,6 +1,7 @@
 .env
 .venv
 myenv
+testenv
 # Python cache files
 __pycache__/
 *.py[cod]

@@ -25,19 +25,12 @@ async def create_provider(
             config=provider.config
         )
         
-        # Check for existing provider with the same name
-        from sqlalchemy import select
-        stmt = select(ModelProvider).where(ModelProvider.name == provider.name)
-        result = await db.execute(stmt)
-        existing = result.scalar_one_or_none()
-        if existing:
-            raise HTTPException(status_code=400, detail=f"Provider with name '{provider.name}' already exists.")
-        
         # Create provider in database
         db_provider = ModelProvider(
             name=provider.name,
             api_key=provider.api_key,
-            config=provider.config
+            config=provider.config,
+            tool_ids=provider.tool_ids or []
         )
         db.add(db_provider)
         await db.commit()
@@ -91,6 +84,9 @@ async def update_provider(
 
     # Update provider fields
     for field, value in provider_update.dict(exclude_unset=True).items():
+        print(field, value)  # Debug log
+        if field == "tool_ids":
+            print(f"Updating tool_ids to: {value}")  # Debug log
         setattr(db_provider, field, value)
 
     try:
