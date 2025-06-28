@@ -39,6 +39,8 @@ class ChatHistory(Base):
     user_message: Mapped[str] = Column(Text, nullable=False)
     assistant_message: Mapped[str] = Column(Text, nullable=False)
     chat_metadata: Mapped[Optional[Dict]] = Column(JSON, nullable=True)
+    tool_request: Mapped[Optional[Dict]] = Column(JSON, nullable=True)
+    tool_response: Mapped[Optional[Dict]] = Column(JSON, nullable=True)
     created_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
 
     # Relationship with ModelProvider

@@ -56,6 +56,8 @@ class ModelProviderInDB(ModelProviderBase):
 class ChatHistoryBase(BaseModel):
     user_message: str
     chat_metadata: Optional[Dict[str, Any]] = None
+    tool_request: Optional[Dict[str, Any]] = None
+    tool_response: Optional[Dict[str, Any]] = None
 
 
 class ChatHistoryCreate(ChatHistoryBase):
